@@ -9,7 +9,7 @@ services:
       - esdata:/usr/share/elasticsearch/data
 
   api:
-    build: ./backend
+    build: .
     environment:
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
       - ES_INDEX=${ES_INDEX:-trec-covid}
@@ -20,15 +20,6 @@ services:
       - irdatasets:/root/.ir_datasets
     depends_on:
       - elasticsearch
-
-  frontend:
-    build: ./frontend
-    environment:
-      - API_URL=${API_URL:-http://localhost:8000}
-    ports:
-      - "8080:80"
-    depends_on:
-      - api
 
 volumes:
   esdata:

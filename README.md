@@ -5,15 +5,21 @@ BM25 na coleção CORD-19 / TREC-COVID round 1) como uma máquina de busca na we
 usando o **Elasticsearch** como indexador no lugar do PyTerrier.
 
 ```
-backend/   API em FastAPI (main.py): indexa a coleção, busca e avalia os modelos
-frontend/  página HTML com o campo de busca (index.html)
+backend/   projeto 1: API em FastAPI (main.py) + Elasticsearch  -> backend/docker-compose.yml
+frontend/  projeto 2: página HTML com o campo de busca (index.html) -> frontend/docker-compose.yml
 HO03(1).ipynb  notebook original
 ```
 
-## Rodando
+São dois projetos independentes, cada um com seu `docker-compose.yml`.
+
+## Rodando localmente
 
 ```bash
-docker compose up --build
+# terminal 1: Elasticsearch + API
+cd backend && docker compose up --build
+
+# terminal 2: frontend
+cd frontend && docker compose up --build
 ```
 
 - Frontend: http://localhost:8080
@@ -26,14 +32,28 @@ Os dados ficam salvos em volumes do Docker, então nas próximas execuções nã
 
 ## Variáveis de ambiente
 
-| Variável | Padrão | Onde | Descrição |
-|---|---|---|---|
-| `ELASTICSEARCH_URL` | `http://elasticsearch:9200` | api | URL de conexão com o Elasticsearch |
-| `ES_INDEX` | `trec-covid` | api | nome do índice |
-| `EVAL_DEPTH` | `1000` | api | documentos por consulta usados na avaliação |
-| `API_URL` | `http://localhost:8000` | frontend | URL da API chamada pelo navegador |
+Backend (`backend/.env.example`):
 
-No deploy (Coolify) basta definir `API_URL` com a URL pública da API.
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `ELASTICSEARCH_URL` | `http://elasticsearch:9200` | URL de conexão com o Elasticsearch |
+| `ES_INDEX` | `trec-covid` | nome do índice |
+| `EVAL_DEPTH` | `1000` | documentos por consulta usados na avaliação |
+
+Frontend (`frontend/.env.example`):
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `API_URL` | `http://localhost:8000` | URL da API chamada pelo navegador |
+
+## Deploy no Coolify
+
+Crie dois recursos do tipo *Docker Compose* apontando para este repositório:
+
+1. **Backend**: base directory `/backend`, compose `docker-compose.yml`.
+   Exponha a porta 8000 em um domínio (ex.: `https://api.seudominio.com`).
+2. **Frontend**: base directory `/frontend`, compose `docker-compose.yml`.
+   Defina a variável `API_URL` com a URL pública do backend e exponha a porta 80.
 
 ## Rotas da API
 
