@@ -14,8 +14,8 @@ services:
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
       - ES_INDEX=${ES_INDEX:-trec-covid}
       - EVAL_DEPTH=${EVAL_DEPTH:-1000}
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - irdatasets:/root/.ir_datasets
     depends_on:

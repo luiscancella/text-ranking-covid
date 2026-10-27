@@ -1,0 +1,6 @@
+# Usado só localmente (o Docker carrega este arquivo automaticamente).
+# Publica a porta da página no host; no Coolify o acesso é pelo domínio.
+services:
+  frontend:
+    ports:
+      - "8080:80"

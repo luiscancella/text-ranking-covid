@@ -1,0 +1,6 @@
+# Usado só localmente (o Docker carrega este arquivo automaticamente).
+# Publica a porta da API no host; no Coolify o acesso é pelo domínio.
+services:
+  api:
+    ports:
+      - "8000:8000"

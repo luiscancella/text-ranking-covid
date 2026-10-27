@@ -11,6 +11,10 @@ HO03(1).ipynb  notebook original
 ```
 
 São dois projetos independentes, cada um com seu `docker-compose.yml`.
+O `docker-compose.override.yml` de cada pasta publica as portas 8000 e 8080
+no host e é carregado automaticamente só quando se roda localmente; no
+Coolify o acesso é pelo domínio configurado, sem publicar portas (as portas
+8000 e 8080 do servidor são usadas pelo próprio Coolify).
 
 ## Rodando localmente
 
@@ -51,9 +55,11 @@ Frontend (`frontend/.env.example`):
 Crie dois recursos do tipo *Docker Compose* apontando para este repositório:
 
 1. **Backend**: base directory `/backend`, compose `docker-compose.yml`.
-   Exponha a porta 8000 em um domínio (ex.: `https://api.seudominio.com`).
+   No serviço `api`, informe o domínio com a porta do container, por exemplo
+   `https://api.seudominio.com:8000`.
 2. **Frontend**: base directory `/frontend`, compose `docker-compose.yml`.
-   Defina a variável `API_URL` com a URL pública do backend e exponha a porta 80.
+   Defina a variável `API_URL` com a URL pública do backend e informe o
+   domínio da página (ex.: `https://busca.seudominio.com`).
 
 ## Rotas da API
 
