@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Busca TREC-COVID</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { margin-bottom: 4px; }
+    .sub { color: #666; margin-top: 0; }
+    form { display: flex; gap: 8px; margin: 20px 0 10px; }
+    input[type=text] { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 16px; font-size: 16px; cursor: pointer; }
+    .opcoes { margin-bottom: 20px; color: #444; }
+    #status { font-size: 14px; color: #666; }
+    .artigo { border-bottom: 1px solid #ddd; padding: 12px 0; }
+    .artigo h3 { margin: 0 0 4px; font-size: 17px; }
+    .artigo .meta { font-size: 13px; color: #666; margin-bottom: 6px; }
+    .artigo p { margin: 0; font-size: 14px; }
+    table { border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px 12px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    #avaliacao { margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <h1>Busca TREC-COVID</h1>
+  <p class="sub">Coleção CORD-19 (round 1) indexada no Elasticsearch — modelos Vetorial TF-IDF e BM25</p>
+  <p id="status">Verificando índice...</p>
+
+  <form id="form">
+    <input type="text" id="q" placeholder="Ex.: coronavirus origin" required>
+    <button type="submit">Buscar</button>
+  </form>
+  <div class="opcoes">
+    Modelo:
+    <label><input type="radio" name="model" value="bm25" checked> BM25</label>
+    <label><input type="radio" name="model" value="tfidf"> Vetorial TF-IDF</label>
+    &nbsp; Resultados:
+    <select id="size"><option>10</option><option>20</option><option>50</option></select>
+  </div>
+
+  <div id="resultados"></div>
+
+  <div id="avaliacao">
+    <h2>Avaliação dos modelos</h2>
+    <p class="sub">Executa as 30 consultas do TREC-COVID e calcula MAP e nDCG, como no notebook.</p>
+    <button id="avaliar">Avaliar TF-IDF x BM25</button>
+    <div id="tabela"></div>
+  </div>
+
+  <script>
+    // Valor substituído pela variável de ambiente API_URL ao subir o container
+    const API_URL = "${API_URL}";
+
+    async function verificarStatus() {
+      const el = document.getElementById("status");
+      try {
+        const r = await fetch(API_URL + "/health");
+        const s = await r.json();
+        if (s.estado === "pronto") {
+          el.textContent = "Índice pronto (" + s.indexados.toLocaleString("pt-BR") + " documentos indexados).";
+        } else {
+          el.textContent = "Indexando a coleção... " + s.indexados + " / " + s.total + " documentos.";
+          setTimeout(verificarStatus, 3000);
+        }
+      } catch (e) {
+        el.textContent = "Não foi possível conectar à API em " + API_URL;
+      }
+    }
+
+    document.getElementById("form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const q = document.getElementById("q").value;
+      const model = document.querySelector("input[name=model]:checked").value;
+      const size = document.getElementById("size").value;
+      const div = document.getElementById("resultados");
+      div.innerHTML = "<p>Buscando...</p>";
+
+      const r = await fetch(API_URL + "/search?q=" + encodeURIComponent(q) + "&model=" + model + "&size=" + size);
+      if (!r.ok) {
+        div.innerHTML = "<p>Erro: " + (await r.json()).detail + "</p>";
+        return;
+      }
+      const dados = await r.json();
+      div.innerHTML = "<p>" + dados.total.toLocaleString("pt-BR") + " documentos encontrados (" + model + ")</p>";
+      for (const a of dados.results) {
+        const titulo = a.url ? `<a href="${a.url}" target="_blank">${a.title || "(sem título)"}</a>` : (a.title || "(sem título)");
+        div.innerHTML += `
+          <div class="artigo">
+            <h3>${a.rank}. ${titulo}</h3>
+            <div class="meta">docno: ${a.docno} &nbsp;|&nbsp; data: ${a.date || "-"} &nbsp;|&nbsp; score: ${a.score.toFixed(3)}</div>
+            <p>${(a.abstract || "").slice(0, 400)}${a.abstract && a.abstract.length > 400 ? "..." : ""}</p>
+          </div>`;
+      }
+    });
+
+    document.getElementById("avaliar").addEventListener("click", async () => {
+      const div = document.getElementById("tabela");
+      div.innerHTML = "<p>Avaliando... (pode levar alguns segundos)</p>";
+      const r = await fetch(API_URL + "/evaluate");
+      const dados = await r.json();
+      const bm25 = dados.resultados.bm25, tfidf = dados.resultados.tfidf;
+      let html = "<table><tr><th>Métrica</th><th>Vetorial TF-IDF</th><th>BM25</th></tr>";
+      for (const m of Object.keys(bm25)) {
+        html += `<tr><td>${m}</td><td>${tfidf[m].toFixed(4)}</td><td>${bm25[m].toFixed(4)}</td></tr>`;
+      }
+      div.innerHTML = html + "</table>";
+    });
+
+    verificarStatus();
+  </script>
+</body>
+</html>

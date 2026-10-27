@@ -1,16 +1,5 @@
-# ambiente
 .env
 .DS_Store
-
-# python
 __pycache__/
-*.pyc
-.venv/
-venv/
-
-# artefatos do notebook / terrier
 indice_trec_covid_round1/
 *.csv
-
-# dados baixados
-.ir_datasets/

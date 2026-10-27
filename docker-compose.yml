@@ -1,48 +1,32 @@
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4
-    container_name: trec-covid-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms1g -Xmx1g}
-    ports:
-      - "${ES_PORT:-9200}:9200"
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
     volumes:
       - esdata:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fs 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 30
-      start_period: 30s
 
   api:
     build: ./backend
-    container_name: trec-covid-api
     environment:
-      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL:-http://elasticsearch:9200}
-      ES_INDEX: ${ES_INDEX:-trec-covid-round1}
-      DATASET_ID: ${DATASET_ID:-cord19/trec-covid/round1}
-      AUTO_INDEX: ${AUTO_INDEX:-true}
-      EVAL_DEPTH: ${EVAL_DEPTH:-1000}
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+      - ES_INDEX=${ES_INDEX:-trec-covid}
+      - EVAL_DEPTH=${EVAL_DEPTH:-1000}
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "8000:8000"
     volumes:
       - irdatasets:/root/.ir_datasets
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      - elasticsearch
 
   frontend:
     build: ./frontend
-    container_name: trec-covid-frontend
     environment:
-      API_URL: ${API_URL:-http://localhost:8000}
+      - API_URL=${API_URL:-http://localhost:8000}
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "8080:80"
     depends_on:
       - api
 
