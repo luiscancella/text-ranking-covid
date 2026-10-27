@@ -106,7 +106,8 @@ def startup():
             break
         time.sleep(2)
     if es.indices.exists(index=INDEX) and es.count(index=INDEX)["count"] > 0:
-        status["estado"] = "pronto"
+        total = es.count(index=INDEX)["count"]
+        status.update(estado="pronto", indexados=total, total=total)
     else:
         threading.Thread(target=indexar, daemon=True).start()
 
@@ -123,7 +124,7 @@ def search(q: str, model: str = "bm25", size: int = 10):
         raise HTTPException(400, "model deve ser 'bm25' ou 'tfidf'")
     if status["estado"] != "pronto":
         raise HTTPException(503, "Índice ainda não está pronto")
-    resp = es.search(index=INDEX, query={"match": {MODELOS[model]: q}}, size=size)
+    resp = es.search(index=INDEX, query={"match": {MODELOS[model]: q}}, size=size, track_total_hits=True)
     return {
         "query": q,
         "model": model,
