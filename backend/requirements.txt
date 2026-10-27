@@ -1,0 +1,5 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+elasticsearch>=8.17,<9
+ir_datasets==0.5.10
+pydantic-settings==2.9.1
